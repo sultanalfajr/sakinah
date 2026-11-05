@@ -6,7 +6,7 @@ const LINKS = [
   { href: "#library", label: "المكتبة" },
   { href: "#stories", label: "قصص النوم" },
   { href: "#timer", label: "المؤقت" },
-  { href: "#account", label: "حسابي" },
+  { href: "#account", label: "سجلُّ الهدوء" },
 ];
 
 export function SiteFooter() {

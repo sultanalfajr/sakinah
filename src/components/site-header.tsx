@@ -12,7 +12,7 @@ const NAV = [
   { href: "#quran", label: "القرآن الكريم" },
   { href: "#hadith", label: "الأحاديث النبوية" },
   { href: "#timer", label: "المؤقت" },
-  { href: "#account", label: "حسابي" },
+  { href: "#account", label: "سجلُّ الهدوء" },
 ];
 
 export function SiteHeader() {
