@@ -10,10 +10,11 @@ const fmt = (s: number) =>
   `${Math.floor(s / 60)}:${String(Math.max(0, s % 60)).padStart(2, "0")}`;
 
 export function TimerSection() {
-  const { timer, startTimer, endSession, playing, setChannel } = useSleep();
+  const { timer, startTimer, endSession, playing, setChannel, quranTitle } = useSleep();
 
   const begin = (minutes: number) => {
-    if (!playing) {
+    // إن كانت تلاوة تعمل فقط، لا نضيف مطرًا فوقها إلا بطلب المستخدم من المكتبة
+    if (!playing && !quranTitle) {
       setChannel("rain", 0.65);
     }
     startTimer(minutes);

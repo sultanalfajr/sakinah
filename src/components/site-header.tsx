@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 const NAV = [
   { href: "#library", label: "المكتبة" },
   { href: "#stories", label: "قصص النوم" },
+  { href: "#quran", label: "القرآن" },
   { href: "#timer", label: "المؤقت" },
   { href: "#account", label: "حسابي" },
 ];

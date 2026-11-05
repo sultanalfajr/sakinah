@@ -145,6 +145,17 @@ export default function StoriesSection() {
     return () => stopPlayback();
   }, [stopPlayback]);
 
+  // بدء التلاوة أو إنهاء الجلسة — نقف احترامًا للسكون
+  useEffect(() => {
+    const stop = () => stopPlayback();
+    window.addEventListener("sakinah:quran-playing", stop);
+    window.addEventListener("sakinah:stop-all", stop);
+    return () => {
+      window.removeEventListener("sakinah:quran-playing", stop);
+      window.removeEventListener("sakinah:stop-all", stop);
+    };
+  }, [stopPlayback]);
+
   // يشغّل مقطعًا واحدًا ويعود true عند انتهائه الطبيعي
   const playChunk = useCallback(
     (id: string, index: number) =>
@@ -175,6 +186,8 @@ export default function StoriesSection() {
     async (id: string, total?: number) => {
       const token = ++playTokenRef.current;
       setPlayingId(id);
+      // نعلن بدء الرواية ليقف مشغّل القرآن احترامًا لصوتٍ واحدٍ في الغرفة
+      window.dispatchEvent(new Event("sakinah:story-playing"));
       const limit = total ?? 201;
       for (let k = 0; k < limit; k++) {
         if (playTokenRef.current !== token) return;

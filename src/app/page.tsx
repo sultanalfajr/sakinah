@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/site-header";
 import { Hero } from "@/components/hero";
 import { SoundLibrary } from "@/components/sound-library";
 import StoriesSection from "@/components/stories-section";
+import { QuranSection } from "@/components/quran-section";
 import { TimerSection } from "@/components/timer-section";
 import AccountSection from "@/components/account-section";
 import { SiteFooter } from "@/components/site-footer";
@@ -24,6 +25,7 @@ export default function Home() {
           <Hero />
           <SoundLibrary />
           <StoriesSection />
+          <QuranSection />
           <TimerSection />
           <AccountSection />
         </main>

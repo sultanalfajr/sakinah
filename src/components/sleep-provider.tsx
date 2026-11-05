@@ -77,6 +77,9 @@ interface SleepContextValue {
   immersive: boolean;
   toggleImmersive: () => void;
   dimFactor: number;
+  /** عنوان التلاوة الجارية (إن وُجدت) — يبثّه مشغّل القرآن */
+  quranTitle: string | null;
+  quranPlaying: boolean;
 }
 
 const SleepContext = createContext<SleepContextValue | null>(null);
@@ -92,6 +95,29 @@ export function SleepProvider({ children }: { children: ReactNode }) {
   const [volume, setVolumeState] = useState(0.9);
   const [timer, setTimer] = useState<TimerState>({ minutes: 0, remaining: 0, running: false });
   const [immersive, setImmersive] = useState(false);
+  const [quranTitle, setQuranTitle] = useState<string | null>(null);
+  const [quranPlaying, setQuranPlaying] = useState(false);
+
+  // حالة مشغّل القرآن تبثّ نفسها بأحداث نافذة — هنا نسمعها لتسجيل الجلسة والمشغّل المصغّر
+  useEffect(() => {
+    const onQuranPlaying = (event: Event) => {
+      const detail = (event as CustomEvent<{ title?: string; playing?: boolean }>).detail;
+      if (detail?.title) {
+        setQuranTitle(detail.title);
+        setQuranPlaying(Boolean(detail.playing));
+      }
+    };
+    const onQuranStopped = () => {
+      setQuranTitle(null);
+      setQuranPlaying(false);
+    };
+    window.addEventListener("sakinah:quran-playing", onQuranPlaying);
+    window.addEventListener("sakinah:quran-stopped", onQuranStopped);
+    return () => {
+      window.removeEventListener("sakinah:quran-playing", onQuranPlaying);
+      window.removeEventListener("sakinah:quran-stopped", onQuranStopped);
+    };
+  }, []);
 
   const volumeRef = useRef(volume);
   volumeRef.current = volume;
@@ -176,12 +202,15 @@ export function SleepProvider({ children }: { children: ReactNode }) {
     const names = Object.entries(channels)
       .filter(([, v]) => (v ?? 0) > 0.001)
       .map(([id]) => CHANNEL_LABELS[id as ChannelId]);
+    if (quranTitle) names.unshift(quranTitle);
     if (names.length === 0) return "جلسة هادئة";
     return names.slice(0, 3).join(" + ");
-  }, [channels]);
+  }, [channels, quranTitle]);
 
   const finishSession = useCallback(
     async (loggedMinutes: number | null) => {
+      // أوقف كل شيء: القنوات الصوتية + التلاوة + القصص
+      window.dispatchEvent(new Event("sakinah:stop-all"));
       ambience.stopAll();
       ambience.setFade(1);
       fadingRef.current = false;
@@ -313,6 +342,8 @@ export function SleepProvider({ children }: { children: ReactNode }) {
       immersive,
       toggleImmersive,
       dimFactor,
+      quranTitle,
+      quranPlaying,
     }),
     [
       channels,
@@ -332,6 +363,8 @@ export function SleepProvider({ children }: { children: ReactNode }) {
       immersive,
       toggleImmersive,
       dimFactor,
+      quranTitle,
+      quranPlaying,
     ]
   );
 

@@ -14,9 +14,18 @@ export type BuiltinStory = {
 /**
  * القصص التي لها صوت مضمن جاهز في public/prebuilt-audio/
  * تُولَّد عبر: bun scripts/prebuild-audio.ts
- * عند إضافة صوت لقصص المجموعة (p1..p6) أضف معرفاتها هنا
+ * (والمقاطع العنيدة عبر: bun scripts/merge-retry-audio.ts)
  */
-export const PREBUILT_AUDIO_IDS = ["b1", "b2", "b3"];
+export const PREBUILT_AUDIO_IDS = [
+  "b1",
+  "b2",
+  "b3",
+  "p1",
+  "p3",
+  "p4",
+  "p5",
+  "p6",
+];
 
 export const BUILTIN_STORIES: BuiltinStory[] = [
   {

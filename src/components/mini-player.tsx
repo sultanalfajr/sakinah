@@ -11,15 +11,27 @@ const fmt = (s: number) =>
   `${Math.floor(s / 60)}:${String(Math.max(0, s % 60)).padStart(2, "0")}`;
 
 export function MiniPlayer() {
-  const { playing, paused, togglePause, channels, volume, setVolume, timer, endSession } =
-    useSleep();
+  const {
+    playing,
+    paused,
+    togglePause,
+    channels,
+    volume,
+    setVolume,
+    timer,
+    endSession,
+    quranTitle,
+    quranPlaying,
+  } = useSleep();
 
-  const show = playing || timer.running;
+  const quranActive = Boolean(quranTitle);
+  const show = playing || timer.running || quranActive;
+  const channelNames = Object.entries(channels)
+    .filter(([, v]) => (v ?? 0) > 0.001)
+    .map(([id, v]) => `${CHANNEL_LABELS[id as ChannelId]} ${Math.round((v ?? 0) * 100)}٪`);
   const activeNames =
-    Object.entries(channels)
-      .filter(([, v]) => (v ?? 0) > 0.001)
-      .map(([id, v]) => `${CHANNEL_LABELS[id as ChannelId]} ${Math.round((v ?? 0) * 100)}٪`)
-      .join(" + ") || "صمتٌ قبل النوم";
+    channelNames.join(" + ") ||
+    (quranTitle ?? "صمتٌ قبل النوم");
 
   return (
     <AnimatePresence>
@@ -35,11 +47,35 @@ export function MiniPlayer() {
             <Button
               size="icon"
               variant="ghost"
-              onClick={togglePause}
-              aria-label={paused ? "استئناف الصوت" : "إيقاف مؤقت"}
+              onClick={() => {
+                if (playing) {
+                  togglePause();
+                } else if (quranActive) {
+                  window.dispatchEvent(new Event("sakinah:quran-toggle"));
+                }
+              }}
+              aria-label={
+                playing
+                  ? paused
+                    ? "استئناف الصوت"
+                    : "إيقاف مؤقت"
+                  : quranPlaying
+                    ? "إيقاف التلاوة مؤقتًا"
+                    : "تشغيل التلاوة"
+              }
               className="size-9 shrink-0 rounded-full bg-teal-300/15 text-teal-200 hover:bg-teal-300/25 hover:text-teal-100"
             >
-              {paused ? <Play className="size-4" /> : <Pause className="size-4" />}
+              {playing ? (
+                paused ? (
+                  <Play className="size-4" />
+                ) : (
+                  <Pause className="size-4" />
+                )
+              ) : quranPlaying ? (
+                <Pause className="size-4" />
+              ) : (
+                <Play className="size-4" />
+              )}
             </Button>
 
             <span className="hidden max-w-[13rem] min-w-0 truncate text-sm text-teal-100/75 sm:block">
