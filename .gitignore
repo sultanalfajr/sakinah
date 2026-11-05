@@ -65,3 +65,8 @@ tests/
 dev.pid
 # pasted screenshots / runtime uploads
 upload/
+
+# cloudflare
+.open-next/
+.wrangler/
+.dev.vars

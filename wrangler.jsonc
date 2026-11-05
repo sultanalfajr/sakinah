@@ -1,0 +1,38 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sakinah",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sakinah-db",
+      // ⚠️ استبدل المعرّف التالي بمعرّف قاعدتك الحقيقي بعد إنشائها:
+      //   wrangler d1 create sakinah-db
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "AUDIO",
+      "bucket_name": "sakinah-audio"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "AI_CHAT_MODEL": "gpt-4o-mini",
+    "AI_TTS_MODEL": "tts-1",
+    "AI_TTS_VOICE": "alloy",
+    "AI_TTS_PATH": "/audio/speech"
+  }
+  // ⚠️ لا تضع AI_API_KEY هنا — أضفها سراً:
+  //   wrangler secret put AI_API_KEY
+  //   ويمكن ضبط AI_BASE_URL بنفس الطريقة أو إضافته إلى vars بعد اختيار مزوّدك
+}

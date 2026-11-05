@@ -1,0 +1,7 @@
+# نسخة مثال لمتغيرات بيئة wrangler dev المحلية (انسخه إلى .dev.vars وعبّئ القيم)
+# AI_BASE_URL=https://api.openai.com/v1
+# AI_API_KEY=sk-...
+# AI_CHAT_MODEL=gpt-4o-mini
+# AI_TTS_MODEL=tts-1
+# AI_TTS_VOICE=alloy
+# AI_TTS_PATH=/audio/speech

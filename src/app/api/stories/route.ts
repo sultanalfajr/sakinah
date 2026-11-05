@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
+import { chatCompletion, AI_NOT_CONFIGURED_MESSAGE } from "@/lib/ai";
 import { db } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -80,10 +80,6 @@ const BUILTIN_STORIES: BuiltinStory[] = [
   },
 ];
 
-type ChatCompletionLike = {
-  choices?: Array<{ message?: { content?: string } }>;
-};
-
 // مزامنة التهيئة داخل العملية الواحدة حتى لا تتكرر القصص المضمّنة
 let seedPromise: Promise<void> | null = null;
 
@@ -151,16 +147,20 @@ export async function POST(req: Request) {
 
     const userPrompt = `اكتب قصة نوم هادئة موضوعها: «${finalTheme}». يجب أن تكون القصة بالعربية من 700 إلى 1000 كلمة، بضمير المخاطب (أنت)، بجملٍ طويلة بطيئة وأوصافٍ حسّية دافئة، بلا أي حبكة أو صراع أو مفاجآت، وتنتهي بنومٍ عميق تدريجي. أعد النتيجة بصيغة JSON فقط بهذا الشكل: {"title": "...", "content": "..."} دون أي نص آخر.`;
 
-    const zai = await ZAI.create();
-    const completion = (await zai.chat.completions.create({
-      messages: [
+    let text: string;
+    try {
+      text = await chatCompletion([
         { role: "assistant", content: SYSTEM_PROMPT },
         { role: "user", content: userPrompt },
-      ],
-      thinking: { type: "disabled" },
-    })) as ChatCompletionLike | null;
+      ]);
+    } catch (aiError) {
+      console.error("AI chat error:", aiError);
+      return NextResponse.json(
+        { error: AI_NOT_CONFIGURED_MESSAGE },
+        { status: 503 }
+      );
+    }
 
-    const text = completion?.choices?.[0]?.message?.content ?? "";
     const parsed = extractJson(text);
     let title = typeof parsed?.title === "string" ? parsed.title.trim() : "";
     let content = typeof parsed?.content === "string" ? parsed.content.trim() : "";

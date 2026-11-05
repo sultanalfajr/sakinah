@@ -21,8 +21,10 @@
 | الإطار | Next.js 16 (App Router) + TypeScript |
 | الواجهة | Tailwind CSS 4 + shadcn/ui + Framer Motion |
 | الصوت | Web Audio API (توليد إجرائي بالكامل) |
-| قصص النوم | توليد نصّي بالذكاء الاصطناعي + TTS عبر z-ai-web-dev-sdk |
-| البيانات | Prisma ORM + SQLite |
+| قصص النوم | توليد نصّي بالذكاء الاصطناعي + TTS (محلياً عبر z-ai-web-dev-sdk، أو أي مزوّد متوافق مع OpenAI عبر متغيرات البيئة) |
+| البيانات | Prisma ORM + SQLite محلياً / Cloudflare D1 في النشر |
+| التخزين الصوتي | القرص محلياً / Cloudflare R2 في النشر |
+| الاستضافة | Cloudflare Workers (عبر @opennextjs/cloudflare) |
 
 ## التشغيل محلياً
 
@@ -44,6 +46,66 @@ bun run dev
 
 > ملاحظة: الصوت يبدأ بعد أول تفاعل من المستخدم (سياسة المتصفحات) — اضغط أي مشهدٍ صوتي ليبدأ.
 
+## النشر على Cloudflare
+
+التطبيق مهيّأ بالكامل لـ Cloudflare Workers: قاعدة البيانات **D1**، ملفات الصوت **R2**، والبناء عبر **OpenNext**.
+
+### 1) إنشاء الموارد
+
+```bash
+bun install
+bunx wrangler login          # تسجيل الدخول لحساب Cloudflare
+bunx wrangler d1 create sakinah-db       # انسخ database_id من النتيجة
+bunx wrangler r2 bucket create sakinah-audio
+```
+
+ضع `database_id` الحقيقي في `wrangler.jsonc` (مكان المعرّف الصفري).
+
+### 2) تهيئة قاعدة D1
+
+```bash
+bun run cf:db:remote         # ينفّذ d1/0001_init.sql على القاعدة البعيدة
+```
+
+### 3) مفاتيح الذكاء الاصطناعي
+
+ميزة توليد القصص والرواية الصوتية تحتاج مزوّداً متوافقاً مع OpenAI (z.ai أو OpenAI أو Groq أو OpenRouter…):
+
+```bash
+bunx wrangler secret put AI_API_KEY      # مفتاح المزوّد
+bunx wrangler secret put AI_BASE_URL     # مثل https://api.z.ai/api/paas/v4 أو https://api.openai.com/v1
+```
+
+واختار النماذج من `vars` في `wrangler.jsonc` (`AI_CHAT_MODEL` / `AI_TTS_MODEL` …).
+
+> بدون هذه المفاتيح يعمل التطبيق كاملاً — كل شيء عدا توليد القصص والرواية الصوتية.
+
+### 4) النشر
+
+```bash
+bun run cf:deploy            # بناء + نشر إلى workers.dev
+```
+
+أو اربط مستودع GitHub من لوحة Cloudflare (Workers & Pages ← Create ← Connect to Git) وأمر البناء:
+`bunx opennextjs-cloudflare build` — وسيُنشر تلقائياً مع كل push.
+
+### تجربة محلية ببيئة Cloudflare
+
+```bash
+bun run cf:db:local          # تهيئة D1 محلية
+bun run cf:preview           # تشغيل workerd محلياً على :8787
+```
+
+لضبط مفاتيح AI في المعاينة المحلية: انسخ `.dev.vars.example` إلى `.dev.vars` وعبّئ القيم.
+
+### حدود الخطة المجانية
+
+| المورد | المجاني شهرياً |
+|---|---|
+| Workers | ١٠٠ ألف طلب/يوم |
+| D1 | ٥ GB تخزين + ٥ مليون صف يومياً |
+| R2 | ١٠ GB تخزين |
+
 ## البنية
 
 ```
@@ -52,8 +114,13 @@ src/
 │   ├── page.tsx              # الصفحة الوحيدة — كل الأقسام
 │   └── api/                  # الجلسات، الملف الشخصي، القصص + روايتها الصوتية
 ├── components/               # السماء، الانغماس، المكتبة، الخلاط، المؤقت…
-└── lib/audio/engine.ts       # محرك التوليد الصوتي الإجرائي
+├── lib/ai.ts                 # مهايئ AI مزدوج (SDK محلياً / OpenAI-compatible للنشر)
+├── lib/audio-store.ts        # مخزن صوتي مزدوج (قرص محلياً / R2 في النشر)
+├── lib/audio/engine.ts       # محرك التوليد الصوتي الإجرائي
+└── lib/db.ts                 # عميل Prisma مزدوج (SQLite محلياً / D1 في النشر)
 prisma/schema.prisma          # Profile / Session / Story
+d1/0001_init.sql              # ترحيل قاعدة D1
+wrangler.jsonc                # إعدادات Cloudflare (D1 + R2 + المتغيرات)
 ```
 
 صُنع بهدوء، لهذه الليلة وكل ليلة. 🌙

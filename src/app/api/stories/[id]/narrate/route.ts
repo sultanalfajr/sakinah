@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
-import ZAI from "z-ai-web-dev-sdk";
+import { ttsAudio, AI_NOT_CONFIGURED_MESSAGE } from "@/lib/ai";
+import { saveAudio, removeStoryAudio } from "@/lib/audio-store";
 import { db } from "@/lib/db";
 
 export const runtime = "nodejs";
 
 const MAX_CHUNK_LENGTH = 800;
 const MAX_CHUNK_INDEX = 200;
-
-type TtsResponseLike = { arrayBuffer: () => Promise<ArrayBuffer> };
 
 // تقسيم جملة واحدة أطول من الحد الأقصى عند أقرب مسافة
 function hardSplit(sentence: string, maxLen: number): string[] {
@@ -48,18 +45,6 @@ function splitIntoChunks(content: string, maxLen = MAX_CHUNK_LENGTH): string[] {
   return chunks;
 }
 
-async function removeStoryAudio(audioDir: string, id: string): Promise<void> {
-  try {
-    const existing = await fs.readdir(audioDir);
-    const targets = existing.filter(
-      (file) => file.startsWith(`${id}-`) && (file.endsWith(".mp3") || file.endsWith(".wav"))
-    );
-    await Promise.all(targets.map((file) => fs.unlink(path.join(audioDir, file))));
-  } catch {
-    // لا شيء لحذفه
-  }
-}
-
 export async function POST(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -79,30 +64,22 @@ export async function POST(
       );
     }
 
-    const audioDir = path.join(process.cwd(), "db", "audio");
-    await fs.mkdir(audioDir, { recursive: true });
-
     // حذف أي ملفات صوت قديمة لهذه القصة قبل التوليد
-    await removeStoryAudio(audioDir, id);
+    await removeStoryAudio(id);
 
-    const zai = await ZAI.create();
     try {
       // توليد تسلسلي للمقاطع تفاديًا لقيود المعدل
       for (let i = 0; i < chunks.length; i++) {
-        const response = (await zai.audio.tts.create({
-          input: chunks[i],
-          voice: "tongtong",
-          speed: 0.8,
-          response_format: "wav",
-          stream: false,
-        })) as TtsResponseLike;
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(new Uint8Array(arrayBuffer));
-        await fs.writeFile(path.join(audioDir, `${id}-${i}.wav`), buffer);
+        const arrayBuffer = await ttsAudio(chunks[i]);
+        const buffer = new Uint8Array(arrayBuffer);
+        await saveAudio(id, i, buffer, "wav");
       }
     } catch (error) {
       // تنظيف الملفات الجزئية عند الفشل
-      await removeStoryAudio(audioDir, id);
+      await removeStoryAudio(id);
+      if (error instanceof Error && error.message.includes("AI tts failed")) {
+        return NextResponse.json({ error: AI_NOT_CONFIGURED_MESSAGE }, { status: 503 });
+      }
       throw error;
     }
 
