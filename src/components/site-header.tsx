@@ -9,6 +9,7 @@ const NAV = [
   { href: "#library", label: "المكتبة" },
   { href: "#stories", label: "قصص النوم" },
   { href: "#quran", label: "القرآن" },
+  { href: "#hadith", label: "الأحاديث" },
   { href: "#timer", label: "المؤقت" },
   { href: "#account", label: "حسابي" },
 ];

@@ -1,5 +1,5 @@
 /**
- * فهرس التلاوات — قرّاء وسور مختارة للنوم.
+ * فهرس التلاوات — القرّاء والسور الـ114 وسلاسل النوم.
  *
  * تعمل التلاوات افتراضيًا من مصادر مجانية مفتوحة (بلا أي مفتاح API):
  *   1. ملفات محلية رفعتها أنت: public/quran/{معرّف-القارئ}/{رقم-السورة}.mp3
@@ -7,6 +7,8 @@
  *   3. cdn.islamic.network (مشروع القرآن المفتوح)
  * إن فشل مصدر ينتقل المشغّل تلقائيًا إلى التالي.
  */
+
+import { ALL_SURAHS, type Surah } from "@/data/surahs";
 
 export type QuranReciter = {
   /** يُستخدم أيضًا كاسم مجلد الملفات المحلية: public/quran/{id}/ */
@@ -55,38 +57,74 @@ export const QURAN_RECITERS: QuranReciter[] = [
   },
 ];
 
-export type QuranSurah = {
-  n: number;
+/* السور الـ114 كاملة — من بيانات المصحف */
+export const QURAN_SURAHS: Surah[] = ALL_SURAHS;
+
+/** سلسلة نوم منسّقة — مجموعة سور تُشغَّل بتتابع قبل النوم */
+export type QuranPlaylist = {
+  id: string;
   name: string;
-  ayahs: number;
+  description: string;
+  surahs: number[];
 };
 
-/** سور مختارة للسهر والنوم — قصيرة ومعروفة أو من سور الرقاق */
-export const QURAN_SURAHS: QuranSurah[] = [
-  { n: 1, name: "الفاتحة", ayahs: 7 },
-  { n: 12, name: "يوسف", ayahs: 111 },
-  { n: 18, name: "الكهف", ayahs: 110 },
-  { n: 19, name: "مريم", ayahs: 98 },
-  { n: 20, name: "طه", ayahs: 135 },
-  { n: 32, name: "السجدة", ayahs: 30 },
-  { n: 36, name: "يس", ayahs: 83 },
-  { n: 44, name: "الدخان", ayahs: 59 },
-  { n: 55, name: "الرحمن", ayahs: 78 },
-  { n: 56, name: "الواقعة", ayahs: 96 },
-  { n: 67, name: "الملك", ayahs: 30 },
-  { n: 73, name: "المزمل", ayahs: 20 },
-  { n: 78, name: "النبأ", ayahs: 40 },
-  { n: 112, name: "الإخلاص", ayahs: 4 },
-  { n: 113, name: "الفلق", ayahs: 5 },
-  { n: 114, name: "الناس", ayahs: 6 },
+export const QURAN_PLAYLISTS: QuranPlaylist[] = [
+  {
+    id: "sleep",
+    name: "سورُ النوم",
+    description: "منتقاة للتلاوة قبل النوم — رقاقٌ وطمأنينة",
+    surahs: [
+      1, 12, 18, 19, 20, 32, 36, 44, 55, 56, 67, 73, 78, 112, 113, 114,
+    ],
+  },
+  {
+    id: "tahseen",
+    name: "التحصين",
+    description: "المعوذات والفاتحة — تحصينُ الليل كاملًا",
+    surahs: [1, 112, 113, 114],
+  },
+  {
+    id: "hearts",
+    name: "قلوبٌ مطمئنة",
+    description: "سور الرقاق التي تُسكِن القلب قبل العينين",
+    surahs: [32, 36, 44, 55, 67, 73],
+  },
+  {
+    id: "short",
+    name: "قصارُ السور",
+    description: "سورٌ قصيرة تُختم بها الليلة بهدوء",
+    surahs: [
+      93, 94, 95, 96, 97, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108,
+      109, 110, 111, 112, 113, 114,
+    ],
+  },
+  {
+    id: "juz30",
+    name: "جزء تبارك",
+    description: "من النبأ إلى الناس — كامل الجزء الأخير",
+    surahs: Array.from({ length: 37 }, (_, i) => i + 78),
+  },
 ];
+
+export function playlistById(id: string): QuranPlaylist | undefined {
+  return QURAN_PLAYLISTS.find((p) => p.id === id);
+}
 
 export function surahName(n: number): string {
   return QURAN_SURAHS.find((s) => s.n === n)?.name ?? `سورة ${n}`;
 }
 
+export function surahByNumber(n: number): Surah | undefined {
+  return QURAN_SURAHS.find((s) => s.n === n);
+}
+
 export function reciterById(id: string): QuranReciter {
   return QURAN_RECITERS.find((r) => r.id === id) ?? QURAN_RECITERS[0];
+}
+
+/** تحويل رقم إلى أرقام عربية-هندية للزخرفة: 67 → ٦٧ */
+export function arabicNumerals(n: number): string {
+  return String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)]);
 }
 
 /** الملف المحلي (إن وُجد) — نفس الأصل، بلا CORS */
@@ -121,5 +159,5 @@ export function formatRecitationTime(seconds: number): string {
   const total = Math.floor(seconds);
   const m = Math.floor(total / 60);
   const s = total % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
+  return `${arabicNumerals(m)}:${String(s).padStart(2, "0").replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)])}`;
 }

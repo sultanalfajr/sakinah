@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
   BookMarked,
+  ListMusic,
   Loader2,
   Pause,
   Play,
@@ -30,6 +31,7 @@ import {
   reciterById,
   surahName,
 } from "@/lib/quran";
+import { QuranBrowser } from "@/components/quran-browser";
 
 const GLASS_CARD =
   "rounded-2xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur-md";
@@ -67,19 +69,35 @@ export function QuranSection() {
   const [loading, setLoading] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [loop, setLoop] = useState(true);
+  /** أسلوب المتابعة بعد انتهاء السورة: تكرارها / الانتقال للتالية / التوقف */
+  const [mode, setMode] = useState<"loop" | "sequence" | "once">("loop");
   const [volume, setVolume] = useState(0.85);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playTokenRef = useRef(0);
-  const loopRef = useRef(loop);
+  const modeRef = useRef(mode);
   const volumeRef = useRef(volume);
   const gainRef = useRef(1); // مستوى الصوت العام × تلاشي المؤقّت
+  /** القائمة الظاهرة في المتصفّح — للتتابع والتقديم/التأخير */
+  const queueRef = useRef<number[]>(QURAN_SURAHS.map((s) => s.n));
+  const reciterRef = useRef(reciterId);
+  /** الانتقال للسورة التالية داخل القائمة — يُربط بعد تعريف skipFrom */
+  const advanceRef = useRef<(delta: number, from: number | null) => void>(
+    () => {}
+  );
 
   /* مزامنة القيم الحيّة مع المراجع */
   useEffect(() => {
-    loopRef.current = loop;
-  }, [loop]);
+    modeRef.current = mode;
+  }, [mode]);
+
+  useEffect(() => {
+    reciterRef.current = reciterId;
+  }, [reciterId]);
+
+  const handleVisibleList = useCallback((list: number[]) => {
+    if (list.length) queueRef.current = list;
+  }, []);
 
   /* تذكّر القارئ المفضّل — لا يمكن قراءة localStorage أثناء العرض على الخادم */
   useEffect(() => {
@@ -230,7 +248,7 @@ export function QuranSection() {
         };
         const onEnded = () => {
           if (playTokenRef.current !== token) return;
-          if (loopRef.current) {
+          if (modeRef.current === "loop") {
             audio.currentTime = 0;
             audio.play().catch(() => {
               playTokenRef.current += 1;
@@ -238,6 +256,8 @@ export function QuranSection() {
               setCurrent(null);
               window.dispatchEvent(new Event("sakinah:quran-stopped"));
             });
+          } else if (modeRef.current === "sequence") {
+            advanceRef.current(1, surah);
           } else {
             stopPlayback();
           }
@@ -296,15 +316,28 @@ export function QuranSection() {
     return () => window.removeEventListener("sakinah:quran-toggle", onToggle);
   }, [togglePlay]);
 
-  /** السورة السابقة (delta = -1) أو التالية (delta = +1) في قائمة السور المختارة */
-  const skip = useCallback(
-    (delta: number) => {
-      const list = QURAN_SURAHS;
-      const index = current ? list.findIndex((s) => s.n === current.surah) : 10; // الملك
-      const nextIndex = ((index + delta) % list.length + list.length) % list.length;
-      startSurah(list[nextIndex].n, reciterId);
+  /** الانتقال بين السور داخل القائمة الظاهرة (أو المصحف كاملًا افتراضيًا) */
+  const skipFrom = useCallback(
+    (delta: number, from: number | null) => {
+      const list = queueRef.current.length
+        ? queueRef.current
+        : QURAN_SURAHS.map((s) => s.n);
+      const index = from != null ? list.indexOf(from) : -1;
+      const base =
+        index === -1 ? (delta > 0 ? -1 : 0) : index;
+      const nextIndex = ((base + delta) % list.length + list.length) % list.length;
+      startSurah(list[nextIndex], reciterRef.current);
     },
-    [current, reciterId, startSurah]
+    [startSurah]
+  );
+
+  useEffect(() => {
+    advanceRef.current = skipFrom;
+  }, [skipFrom]);
+
+  const skip = useCallback(
+    (delta: number) => skipFrom(delta, current?.surah ?? null),
+    [current?.surah, skipFrom]
   );
 
   const seek = useCallback((value: number) => {
@@ -330,8 +363,9 @@ export function QuranSection() {
           القرآنُ الكريم — رفيقُ الليل
         </h2>
         <p className="mt-3 max-w-xl leading-relaxed text-teal-100/60">
-          تلاواتٌ مجانية بلا أي مفتاح، من قارّئك المفضّل — قبل النوم أو مع
-          صوتٍ محيطٍ خافت، ويتلاشى مع مؤقّتك تلقائيًا.
+          المصحفُ كاملًا — ١١٤ سورة ببحثٍ وتصفيةٍ وسلاسلِ نومٍ جاهزة، من
+          قارّئك المفضّل — قبل النوم أو مع صوتٍ محيطٍ خافت، ويتلاشى مع مؤقّتك
+          تلقائيًا.
         </p>
 
         <div className={`${GLASS_CARD} mt-10`}>
@@ -360,37 +394,15 @@ export function QuranSection() {
             </Select>
           </div>
 
-          {/* شبكة السور */}
-          <div className="mt-6 flex flex-wrap gap-2">
-            {QURAN_SURAHS.map((surah) => {
-              const isActive = current?.surah === surah.n;
-              return (
-                <button
-                  key={surah.n}
-                  type="button"
-                  onClick={() => {
-                    if (isActive) {
-                      // نفس السورة: تشغيل/إيقاف مؤقت/استئناف
-                      togglePlay();
-                      return;
-                    }
-                    startSurah(surah.n, reciterId);
-                  }}
-                  aria-label={`تشغيل سورة ${surah.name}`}
-                  aria-pressed={isActive}
-                  className={`rounded-full border px-4 py-2 text-sm transition-all duration-300 ${
-                    isActive
-                      ? "border-teal-300/60 bg-teal-300/15 text-teal-100"
-                      : "border-white/10 bg-white/[0.03] text-teal-100/70 hover:-translate-y-0.5 hover:border-teal-300/40 hover:bg-teal-300/10 hover:text-teal-100"
-                  }`}
-                >
-                  {surah.name}
-                  <span className="ms-1.5 text-[10px] text-teal-100/40">
-                    {surah.ayahs} آية
-                  </span>
-                </button>
-              );
-            })}
+          {/* متصفّح السور الـ114 */}
+          <div className="mt-6">
+            <QuranBrowser
+              currentSurah={current?.surah ?? null}
+              playing={playing}
+              loading={loading}
+              onPlay={(n) => startSurah(n, reciterId)}
+              onVisibleListChange={handleVisibleList}
+            />
           </div>
 
           {/* المشغّل */}
@@ -471,20 +483,42 @@ export function QuranSection() {
                   </Button>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  {/* وضع المتابعة: تكرار السورة أو التتابع فيها أو التوقف */}
                   <button
                     type="button"
-                    onClick={() => setLoop((v) => !v)}
-                    aria-pressed={loop}
-                    aria-label={loop ? "التكرار مُفعّل" : "التكرار مُعطّل"}
+                    onClick={() => setMode((m) => (m === "loop" ? "once" : "loop"))}
+                    aria-pressed={mode === "loop"}
+                    aria-label={
+                      mode === "loop" ? "التكرار مُفعّل" : "التكرار مُعطّل"
+                    }
                     className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition ${
-                      loop
+                      mode === "loop"
                         ? "border-teal-300/40 bg-teal-300/10 text-teal-200"
                         : "border-white/10 bg-transparent text-teal-100/50 hover:text-teal-100"
                     }`}
                   >
                     <Repeat className="size-3.5" aria-hidden="true" />
                     تكرار
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMode((m) => (m === "sequence" ? "once" : "sequence"))
+                    }
+                    aria-pressed={mode === "sequence"}
+                    aria-label={
+                      mode === "sequence" ? "التتابع مُفعّل" : "التتابع مُعطّل"
+                    }
+                    title="الانتقال تلقائيًا للسورة التالية في القائمة الظاهرة"
+                    className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition ${
+                      mode === "sequence"
+                        ? "border-teal-300/40 bg-teal-300/10 text-teal-200"
+                        : "border-white/10 bg-transparent text-teal-100/50 hover:text-teal-100"
+                    }`}
+                  >
+                    <ListMusic className="size-3.5" aria-hidden="true" />
+                    تتابع
                   </button>
                   <div className="flex items-center gap-2">
                     <Volume2
@@ -509,12 +543,13 @@ export function QuranSection() {
 
           {/* ملاحظة المصادر */}
           <p className="mt-4 text-xs leading-relaxed text-teal-100/40">
-            تُبثّ التلاوات من مصادر مجانية مفتوحة عبر الإنترنت. ولإضافة قارئ
-            خاصٍّ بك أو لتعمل بلا إنترنت: ضع ملفات MP3 في مجلد{" "}
+            تعمل التلاوات فورًا من مصادرٍ مجانية عبر الإنترنت، وملفاتك
+            المرفوعة أولويةً دائمًا: ضع ملفات MP3 باسم رقم السورة
+            (1.mp3 … 114.mp3) في مجلد{" "}
             <code dir="ltr" className="rounded bg-white/5 px-1.5 py-0.5 text-teal-200/80">
-              public/quran/{reciter.id}/{"رقم-السورة"}.mp3
+              public/quran/{reciter.id}/
             </code>{" "}
-            وستُستخدم تلقائيًا قبل أي مصدر خارجي.
+            وستُقرأ تلقائيًا قبل أي مصدر خارجي — وتعمل بلا إنترنت أيضًا.
           </p>
         </div>
       </div>

@@ -9,6 +9,7 @@ import { Hero } from "@/components/hero";
 import { SoundLibrary } from "@/components/sound-library";
 import StoriesSection from "@/components/stories-section";
 import { QuranSection } from "@/components/quran-section";
+import { HadithSection } from "@/components/hadith-section";
 import { TimerSection } from "@/components/timer-section";
 import AccountSection from "@/components/account-section";
 import { SiteFooter } from "@/components/site-footer";
@@ -26,6 +27,7 @@ export default function Home() {
           <SoundLibrary />
           <StoriesSection />
           <QuranSection />
+          <HadithSection />
           <TimerSection />
           <AccountSection />
         </main>
