@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Download, Share, Smartphone, SquarePlus, X } from "lucide-react";
+import { Download, Grip, Share, Smartphone, SquarePlus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +26,7 @@ const BAR_HEIGHT = "52px";
 export function PwaInstallBar() {
   const [visible, setVisible] = useState(false);
   const [iosOpen, setIosOpen] = useState(false);
+  const [sheetKind, setSheetKind] = useState<"ios" | "generic">("generic");
   const iosModeRef = useRef(false);
   const promptRef = useRef<InstallPromptEvent | null>(null);
 
@@ -56,8 +57,6 @@ export function PwaInstallBar() {
       /iphone|ipad|ipod/i.test(nav.userAgent) ||
       (nav.platform === "MacIntel" && nav.maxTouchPoints > 1);
 
-    let iosTimer: ReturnType<typeof setTimeout> | undefined;
-
     const onPrompt = (e: Event) => {
       e.preventDefault();
       promptRef.current = e as InstallPromptEvent;
@@ -70,13 +69,14 @@ export function PwaInstallBar() {
     window.addEventListener("appinstalled", onInstalled);
     if (isIOS) {
       iosModeRef.current = true;
-      iosTimer = setTimeout(() => setVisible(true), 2000);
     }
+    /* الشريط يظهر دائمًا عند الزيارة الأولى — والنافذة الفورية تُطلق عند الضغط إن دعمها المتصفح */
+    const showTimer = setTimeout(() => setVisible(true), 1200);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
-      if (iosTimer) clearTimeout(iosTimer);
+      clearTimeout(showTimer);
     };
   }, []);
 
@@ -99,6 +99,7 @@ export function PwaInstallBar() {
       }
       return;
     }
+    setSheetKind(iosModeRef.current ? "ios" : "generic");
     setIosOpen(true);
   };
 
@@ -163,39 +164,79 @@ export function PwaInstallBar() {
         >
           <SheetHeader className="items-start text-start">
             <SheetTitle className="font-display text-lg text-teal-50">
-              إضافة سَكِينَة إلى الشاشة الرئيسية
+              {sheetKind === "ios"
+                ? "إضافة سَكِينَة إلى الشاشة الرئيسية"
+                : "تثبيت سَكِينَة كتطبيق"}
             </SheetTitle>
             <SheetDescription className="text-sm leading-relaxed text-teal-100/60">
-              نظام iPhone لا يتيح نافذة تثبيتٍ مباشرة — وهاتان الخطوتان هما الطريقة
-              الرسمية الوحيدة:
+              {sheetKind === "ios"
+                ? "نظام iPhone لا يتيح نافذة تثبيتٍ مباشرة — وهاتان الخطوتان هما الطريقة الرسمية الوحيدة:"
+                : "متصفحك سيعرض نافذة التثبيت الفورية تلقائيًا عند توفرها — أو ثبّته من قائمة المتصفح:"}
             </SheetDescription>
           </SheetHeader>
           <ol className="mt-2 space-y-3 pb-6">
-            <li className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-300/15 text-teal-200">
-                <Share className="size-4" aria-hidden="true" />
-              </span>
-              <span className="text-sm text-teal-100/85">
-                اضغط زرَّ <span className="font-bold text-teal-50">المشاركة</span> أسفل
-                شريط Safari
-              </span>
-            </li>
-            <li className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-300/15 text-teal-200">
-                <SquarePlus className="size-4" aria-hidden="true" />
-              </span>
-              <span className="text-sm text-teal-100/85">
-                اختر <span className="font-bold text-teal-50">«إضافة إلى الشاشة الرئيسية»</span>
-              </span>
-            </li>
-            <li className="flex items-center gap-3 rounded-xl border border-teal-300/20 bg-teal-300/[0.06] p-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-300/20 text-teal-100">
-                <Smartphone className="size-4" aria-hidden="true" />
-              </span>
-              <span className="text-sm text-teal-100/85">
-                افتح التطبيق من أيقونته — بملء الشاشة وبلا شريط عنوان
-              </span>
-            </li>
+            {sheetKind === "ios" ? (
+              <>
+                <li className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-300/15 text-teal-200">
+                    <Share className="size-4" aria-hidden="true" />
+                  </span>
+                  <span className="text-sm text-teal-100/85">
+                    اضغط زرَّ <span className="font-bold text-teal-50">المشاركة</span> أسفل
+                    شريط Safari
+                  </span>
+                </li>
+                <li className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-300/15 text-teal-200">
+                    <SquarePlus className="size-4" aria-hidden="true" />
+                  </span>
+                  <span className="text-sm text-teal-100/85">
+                    اختر{" "}
+                    <span className="font-bold text-teal-50">«إضافة إلى الشاشة الرئيسية»</span>
+                  </span>
+                </li>
+                <li className="flex items-center gap-3 rounded-xl border border-teal-300/20 bg-teal-300/[0.06] p-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-300/20 text-teal-100">
+                    <Smartphone className="size-4" aria-hidden="true" />
+                  </span>
+                  <span className="text-sm text-teal-100/85">
+                    افتح التطبيق من أيقونته — بملء الشاشة وبلا شريط عنوان
+                  </span>
+                </li>
+              </>
+            ) : (
+              <>
+                <li className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-300/15 text-teal-200">
+                    <Grip className="size-4" aria-hidden="true" />
+                  </span>
+                  <span className="text-sm text-teal-100/85">
+                    افتح قائمة المتصفح{" "}
+                    <span className="font-bold text-teal-50">(⋮ على الحاسوب، ☰ أو ⋮ على الجوال)</span>
+                  </span>
+                </li>
+                <li className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-300/15 text-teal-200">
+                    <Download className="size-4" aria-hidden="true" />
+                  </span>
+                  <span className="text-sm text-teal-100/85">
+                    اختر{" "}
+                    <span className="font-bold text-teal-50">
+                      «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية»
+                    </span>
+                  </span>
+                </li>
+                <li className="flex items-center gap-3 rounded-xl border border-teal-300/20 bg-teal-300/[0.06] p-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-300/20 text-teal-100">
+                    <Smartphone className="size-4" aria-hidden="true" />
+                  </span>
+                  <span className="text-sm text-teal-100/85">
+                    يعمل التثبيت المباشر بنافذةٍ فورية في Chrome وEdge وSamsung
+                    Internet وOpera
+                  </span>
+                </li>
+              </>
+            )}
           </ol>
         </SheetContent>
       </Sheet>

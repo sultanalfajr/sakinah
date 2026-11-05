@@ -3,7 +3,6 @@
 import { ExternalLink } from "lucide-react";
 
 import { Logo } from "@/components/logo";
-import { DheffafMark } from "@/components/dheffaf-mark";
 
 const LINKS = [
   { href: "#library", label: "المكتبة" },
@@ -51,9 +50,16 @@ export function SiteFooter() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="شبكة ضفاف الإعلامية — الموقع الرسمي"
-            className="group flex w-fit items-center gap-2 text-xs text-teal-100/55 transition-colors hover:text-teal-100"
+            className="group flex w-fit items-center gap-2.5 text-xs text-teal-100/55 transition-colors hover:text-teal-100"
           >
-            <DheffafMark className="size-5 shrink-0 text-teal-200/70 transition-colors group-hover:text-teal-200" />
+            <img
+              src="/dheffaf.png"
+              alt="شعار شبكة ضفاف الإعلامية"
+              width={28}
+              height={28}
+              loading="lazy"
+              className="size-7 shrink-0 rounded-lg bg-white/95 p-[3px] ring-1 ring-white/15 transition-transform duration-300 group-hover:scale-105"
+            />
             <span>
               من مشاريع:{" "}
               <span className="text-teal-100/80 transition-colors group-hover:text-teal-50">
