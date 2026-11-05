@@ -141,12 +141,29 @@ export function QuranBrowser({
 
   return (
     <div>
-      {/* سلاسل النوم */}
+      {/* القرآن الكريم — تصنيفات السور */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="flex items-center gap-1.5 text-xs text-teal-300/80">
           <Sparkles className="size-3.5" aria-hidden="true" />
-          سلاسلُ النوم
+          القرآن الكريم
         </span>
+        <button
+          type="button"
+          onClick={() => setPlaylistId(null)}
+          aria-pressed={playlistId === null}
+          title="جميع سور المصحف الـ114"
+          className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs transition-all duration-300 ${
+            playlistId === null
+              ? "border-teal-300/60 bg-teal-300/15 text-teal-100"
+              : "border-white/10 bg-white/[0.03] text-teal-100/60 hover:border-teal-300/40 hover:text-teal-100"
+          }`}
+        >
+          <BookOpen className="size-3.5" aria-hidden="true" />
+          كل السور
+          <span className="text-[10px] text-teal-100/40">
+            {arabicNumerals(114)}
+          </span>
+        </button>
         {QURAN_PLAYLISTS.map((p) => {
           const active = playlistId === p.id;
           return (
