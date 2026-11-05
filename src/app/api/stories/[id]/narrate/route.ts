@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ttsAudio, AI_NOT_CONFIGURED_MESSAGE } from "@/lib/ai";
+import { ttsAudio, aiEnvConfigured, AI_NOT_CONFIGURED_MESSAGE } from "@/lib/ai";
 import { saveAudio, removeStoryAudio } from "@/lib/audio-store";
 import { db } from "@/lib/db";
 
@@ -51,6 +51,12 @@ export async function POST(
 ) {
   const { id } = await params;
   try {
+    // تحقق مبكر: القصص المضمنة لها صوت جاهز — أما القصص الجديدة فتحتاج AI
+    const isPrebuilt = /^(b|p)\d+$/.test(id);
+    if (!isPrebuilt && !aiEnvConfigured()) {
+      return NextResponse.json({ error: AI_NOT_CONFIGURED_MESSAGE }, { status: 503 });
+    }
+
     const story = await db.story.findUnique({ where: { id } });
     if (!story) {
       return NextResponse.json({ error: "القصة غير موجودة" }, { status: 404 });
@@ -77,7 +83,10 @@ export async function POST(
     } catch (error) {
       // تنظيف الملفات الجزئية عند الفشل
       await removeStoryAudio(id);
-      if (error instanceof Error && error.message.includes("AI tts failed")) {
+      if (
+        !aiEnvConfigured() ||
+        (error instanceof Error && error.message.includes("AI tts failed"))
+      ) {
         return NextResponse.json({ error: AI_NOT_CONFIGURED_MESSAGE }, { status: 503 });
       }
       throw error;

@@ -205,12 +205,17 @@ export default function StoriesSection() {
 
       let total = chunkCounts[story.id];
       if (!story.hasAudio) {
+        let narrateError = "تعذّر تجهيز الرواية الصوتية، أعد المحاولة";
         setNarratingId(story.id);
         try {
           const res = await fetch(`/api/stories/${story.id}/narrate`, {
             method: "POST",
           });
-          if (!res.ok) throw new Error("narration failed");
+          if (!res.ok) {
+            const errData = (await res.json().catch(() => null)) as { error?: string } | null;
+            if (errData?.error) narrateError = errData.error;
+            throw new Error("narration failed");
+          }
           const data = (await res.json()) as { chunkCount: number };
           total = data.chunkCount;
           setChunkCounts((prev) => ({ ...prev, [story.id]: data.chunkCount }));
@@ -221,7 +226,7 @@ export default function StoriesSection() {
           );
           toast.success("الرواية جاهزة، أغمد عينيك");
         } catch {
-          toast.error("تعذّر تجهيز الرواية الصوتية، أعد المحاولة");
+          toast.error(narrateError);
           return;
         } finally {
           setNarratingId(null);
@@ -244,7 +249,11 @@ export default function StoriesSection() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ theme: themeInput.trim() }),
         });
-        if (!res.ok) throw new Error("generation failed");
+        if (!res.ok) {
+          const errData = (await res.json().catch(() => null)) as { error?: string } | null;
+          toast.error(errData?.error ?? "تعذّر نسج القصة، أعد المحاولة");
+          return;
+        }
         const story = (await res.json()) as StoryItem;
         setStories((prev) => [story, ...prev]);
         setThemeInput("");

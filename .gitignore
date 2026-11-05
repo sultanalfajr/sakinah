@@ -70,3 +70,5 @@ upload/
 .open-next/
 .wrangler/
 .dev.vars
+.prebuild-tmp/
+tts-test.wav

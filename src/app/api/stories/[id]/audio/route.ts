@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { readAudio } from "@/lib/audio-store";
+import { promises as fs } from "fs";
+import path from "path";
+import { readAudio, onCloudflare } from "@/lib/audio-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,8 +25,30 @@ export async function GET(
     return NextResponse.json({ error: "طلب غير صالح" }, { status: 400 });
   }
 
-  // الصيغة الحالية wav، مع تراجع آمن لأي مقاطع mp3 قديمة — يُدار داخل المخزن المزدوج
-  const hit = await readAudio(id, index);
+  // 1) المخزن المزدوج (R2 على Cloudflare / db/audio محليًا)
+  let hit = await readAudio(id, index);
+
+  // 2) تراجع: الملفات الصوتية المضمنة (تعمل بلا أي مفتاح AI)
+  if (!hit) {
+    const prebuiltDir = path.resolve(process.cwd(), "public", "prebuilt-audio");
+    const prebuiltPath = path.resolve(prebuiltDir, `${id}-${index}.mp3`);
+    if (prebuiltPath.startsWith(prebuiltDir + path.sep)) {
+      if (await onCloudflare()) {
+        // داخل Cloudflare Workers: نحوّل المتصفح إلى الأصل الثابت (CDN مجاني)
+        return NextResponse.redirect(
+          new URL(`/prebuilt-audio/${id}-${index}.mp3`, req.nextUrl.origin),
+          302
+        );
+      }
+      try {
+        const buffer = await fs.readFile(prebuiltPath);
+        hit = { data: new Uint8Array(buffer), type: "audio/mpeg" };
+      } catch {
+        hit = null;
+      }
+    }
+  }
+
   if (!hit) {
     return NextResponse.json({ error: "الملف الصوتي غير موجود" }, { status: 404 });
   }

@@ -29,6 +29,16 @@ async function getBucket(): Promise<R2Like | null> {
   }
 }
 
+/** هل نعمل داخل Cloudflare Workers؟ */
+export async function onCloudflare(): Promise<boolean> {
+  try {
+    getCloudflareContext();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function keyFor(id: string, index: number, format: string): string {
   return `audio/${id}-${index}.${format}`;
 }
