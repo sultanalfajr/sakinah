@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 const NAV = [
   { href: "#library", label: "المكتبة" },
   { href: "#stories", label: "قصص النوم" },
-  { href: "#quran", label: "القرآن" },
-  { href: "#hadith", label: "الأحاديث" },
+  { href: "#quran", label: "القرآن الكريم" },
+  { href: "#hadith", label: "الأحاديث النبوية" },
   { href: "#timer", label: "المؤقت" },
   { href: "#account", label: "حسابي" },
 ];
@@ -46,7 +46,7 @@ export function SiteHeader() {
           </span>
         </a>
 
-        <nav aria-label="التنقل الرئيسي" className="hidden items-center gap-7 md:flex">
+        <nav aria-label="التنقل الرئيسي" className="hidden items-center gap-5 lg:gap-7 md:flex">
           {NAV.map((item) => (
             <a
               key={item.href}
