@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Moon } from "lucide-react";
 import { useSleep } from "@/components/sleep-provider";
+import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 
 const NAV = [
@@ -35,14 +36,9 @@ export function SiteHeader() {
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <a href="#" className="flex items-center gap-2.5" aria-label="سَكِينَة — الرئيسية">
-          <span className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-teal-300/25 to-teal-600/10 ring-1 ring-teal-300/30">
-            <Moon className="size-4.5 text-teal-200" />
-          </span>
+          <Logo className="size-9 drop-shadow-[0_0_14px_rgba(45,212,191,0.35)]" />
           <span className="font-display text-xl leading-none text-teal-50">
             سَكِينَة
-            <span className="ms-2 hidden text-xs font-normal text-teal-100/50 sm:inline">
-              أصواتٌ للنوم
-            </span>
           </span>
         </a>
 

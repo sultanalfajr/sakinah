@@ -1,6 +1,6 @@
 "use client";
 
-import { Moon } from "lucide-react";
+import { Logo } from "@/components/logo";
 
 const LINKS = [
   { href: "#library", label: "المكتبة" },
@@ -15,9 +15,7 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
           <span className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-full bg-teal-300/15 ring-1 ring-teal-300/25">
-              <Moon className="size-4 text-teal-200" aria-hidden="true" />
-            </span>
+            <Logo className="size-9" />
             <span className="font-display text-lg text-teal-50">سَكِينَة</span>
           </span>
           <p className="mt-2 max-w-xs text-sm leading-relaxed text-teal-100/50">
