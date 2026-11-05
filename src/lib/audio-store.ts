@@ -39,6 +39,16 @@ export async function onCloudflare(): Promise<boolean> {
   }
 }
 
+/**
+ * هل يتوفر تخزين دائم للصوت المولّد؟
+ * - محلياً: القرص دائماً متاح
+ * - على Cloudflare: يتطلب ربط R2 (اختياري — التطبيق يعمل دونه)
+ */
+export async function hasPersistentAudioStorage(): Promise<boolean> {
+  if (!(await onCloudflare())) return true;
+  return (await getBucket()) !== null;
+}
+
 function keyFor(id: string, index: number, format: string): string {
   return `audio/${id}-${index}.${format}`;
 }
@@ -54,6 +64,10 @@ export async function saveAudio(
   if (bucket) {
     await bucket.put(keyFor(id, index, format), data);
     return;
+  }
+  // على Cloudflare بلا R2 لا يوجد قرص دائم — فشل صريح بدل كتابة ضائعة
+  if (await onCloudflare()) {
+    throw new Error("R2_UNAVAILABLE");
   }
   await fs.mkdir(AUDIO_DIR, { recursive: true });
   await fs.writeFile(path.join(AUDIO_DIR, `${id}-${index}.${format}`), data);

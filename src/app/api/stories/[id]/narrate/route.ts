@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { ttsAudio, aiEnvConfigured, AI_NOT_CONFIGURED_MESSAGE } from "@/lib/ai";
-import { saveAudio, removeStoryAudio } from "@/lib/audio-store";
+import {
+  saveAudio,
+  removeStoryAudio,
+  hasPersistentAudioStorage,
+} from "@/lib/audio-store";
 import { db } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -60,6 +64,17 @@ export async function POST(
     const story = await db.story.findUnique({ where: { id } });
     if (!story) {
       return NextResponse.json({ error: "القصة غير موجودة" }, { status: 404 });
+    }
+
+    // على Cloudflare بلا R2: لا يوجد تخزين دائم للصوت المولّد — رسالة واضحة بدل فشل غامض
+    if (!(await hasPersistentAudioStorage())) {
+      return NextResponse.json(
+        {
+          error:
+            "الرواية الصوتية للقصص المولّدة تتطلب تخزين R2 على النشر — القصص الجاهزة تعمل بصوتها المضمّن دون أي إعداد",
+        },
+        { status: 503 }
+      );
     }
 
     const chunks = splitIntoChunks(story.content);

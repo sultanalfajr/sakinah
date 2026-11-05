@@ -17,12 +17,16 @@
       "database_id": "00000000-0000-0000-0000-000000000000"
     }
   ],
-  "r2_buckets": [
-    {
-      "binding": "AUDIO",
-      "bucket_name": "sakinah-audio"
-    }
-  ],
+  // ✅ اختياري: تخزين R2 يتطلب إضافة بطاقة في Cloudflare — التطبيق يعمل دونها بالكامل
+  // (الصوت الجاهز يُقدَّم من الأصول الثابتة، والقرآن يُبثّ من مصادر مجانية)
+  // عند توفّر بطاقة لاحقًا فعّل الكتلة التالية وأنشئ الحاوية:
+  //   wrangler r2 bucket create sakinah-audio
+  // "r2_buckets": [
+  //   {
+  //     "binding": "AUDIO",
+  //     "bucket_name": "sakinah-audio"
+  //   }
+  // ],
   "observability": {
     "enabled": true
   },
