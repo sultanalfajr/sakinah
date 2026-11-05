@@ -31,7 +31,10 @@ export function Hero() {
   };
 
   return (
-    <section className="relative flex min-h-[92svh] flex-col items-center justify-center px-4 pb-16 pt-24 text-center sm:px-6">
+    <section
+      style={{ paddingTop: "calc(6rem + var(--pwa-bar-h, 0px))" }}
+      className="relative flex min-h-[92svh] flex-col items-center justify-center px-4 pb-16 text-center sm:px-6"
+    >
       <div className="flex items-center gap-2 rounded-full border border-teal-300/15 bg-teal-300/5 px-4 py-1.5 text-xs tracking-wide text-teal-200/80">
         <Sparkles className="size-3.5" aria-hidden="true" />
         تأملُ النوم والأصوات المحيطة

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Moon } from "lucide-react";
 import { useSleep } from "@/components/sleep-provider";
 import { Logo } from "@/components/logo";
+import { PwaInstallBar } from "@/components/pwa-install-bar";
 import { Button } from "@/components/ui/button";
 
 const NAV = [
@@ -28,7 +29,8 @@ export function SiteHeader() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-40 transition-colors duration-500 ${
+      style={{ top: "var(--pwa-bar-h, 0px)" }}
+      className={`fixed inset-x-0 z-40 transition-colors duration-500 ${
         scrolled
           ? "border-b border-white/5 bg-[#08161c]/70 backdrop-blur-xl"
           : "bg-transparent"
@@ -65,6 +67,7 @@ export function SiteHeader() {
           <Moon className="size-5" />
         </Button>
       </div>
+      <PwaInstallBar />
     </header>
   );
 }

@@ -21,12 +21,18 @@ export const metadata: Metadata = {
     "تطبيق التأمل أثناء النوم و ASMR: مشاهد صوتية متكررة، خلاط أصوات بالموجات، قصص نوم طويلة، ومؤقت يتلاشى بلطف حتى الصمت.",
   keywords: ["نوم", "تأمل", "ASMR", "أصوات محيطة", "مؤقت نوم", "قصص نوم"],
   authors: [{ name: "سَكِينَة" }],
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "سَكِينَة",
+  },
 };
 
 export const viewport: Viewport = {
   themeColor: "#08161c",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
