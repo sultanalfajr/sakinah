@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// الملف الشخصي: خط النوم ودقائقه
+model Profile {
+  id              String   @id @default("main")
+  streak          Int      @default(0) // الليالي المتتالية
+  longestStreak   Int      @default(0) // أطول سلسلة
+  totalMinutes    Int      @default(0) // إجمالي دقائق النوم
+  nightsCount     Int      @default(0) // عدد الليالي الهادئة
+  lastSessionDate String? // آخر تاريخ جلسة YYYY-MM-DD بتوقيت الرياض
+  updatedAt       DateTime @updatedAt
+}
+
+// جلسة نوم مكتملة
+model Session {
+  id        String   @id @default(cuid())
+  scene     String // اسم المشهد الصوتي (عربي)
+  minutes   Int
+  createdAt DateTime @default(now())
+}
+
+// قصة نوم (مضمّنة أو مولّدة بالذكاء الاصطناعي)
+model Story {
+  id        String   @id @default(cuid())
+  title     String
+  theme     String
+  content   String
+  minutes   Int      @default(20) // مدة الاستماع التقريبية
+  isBuiltin Boolean  @default(false)
+  hasAudio  Boolean  @default(false) // هل جُهّزت الرواية الصوتية
+  createdAt DateTime @default(now())
+}
